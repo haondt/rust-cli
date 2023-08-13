@@ -1,5 +1,7 @@
 #![allow(unused)]
 use clap::Parser;
+use std::fs::File;
+use std::io::{BufReader, BufRead};
 
 #[derive(Parser)]
 struct Cli {
@@ -9,11 +11,19 @@ struct Cli {
 
 fn main() {
     let args = Cli::parse();
-    let content = std::fs::read_to_string(&args.path).expect("Could not read file!");
+    let f = File::open(&args.path).expect(("Unable to open file"));
+    let mut reader = BufReader::new(f);
 
-    for line in content.lines() {
+
+    loop {
+        let mut line = String::new();
+        let len = reader.read_line(&mut line).expect("Unable to read line");
+        if len == 0 {
+            break;
+        }
         if line.contains(&args.pattern) {
-            println!("{}", line)
+            println!("{}", line);
         }
     }
+
 }
