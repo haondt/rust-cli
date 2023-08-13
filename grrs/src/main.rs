@@ -2,6 +2,7 @@
 use clap::Parser;
 use std::fs::File;
 use std::io::{BufReader, BufRead};
+use anyhow::{Context, Result};
 
 #[derive(Parser)]
 struct Cli {
@@ -9,21 +10,19 @@ struct Cli {
     path: std::path::PathBuf,
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
-    let f = File::open(&args.path).expect(("Unable to open file"));
+    let pathstr = args.path.as_os_str().to_str().unwrap();
+    let f = File::open(&args.path)
+        .with_context(|| format!("could not read file `{}`", &pathstr))?;
     let mut reader = BufReader::new(f);
-
 
     loop {
         let mut line = String::new();
-        let len = reader.read_line(&mut line).expect("Unable to read line");
-        if len == 0 {
-            break;
-        }
-        if line.contains(&args.pattern) {
-            println!("{}", line);
-        }
+        let len = reader.read_line(&mut line)?;
+        if len == 0 { break; }
+        if line.contains(&args.pattern) { println!("{}", line); }
     }
 
+    Ok(())
 }
